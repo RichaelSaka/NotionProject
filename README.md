@@ -22,7 +22,7 @@ NotionMail is a simple **Command-Line Interface (CLI)** application for managing
 
 ### Step 1: Clone the Repository
 ```bash
-git clone <https://github.com/RichaelSaka/NotionProject.git>
+git clone https://github.com/RichaelSaka/NotionProject.git
 cd notion-project
 ```
 
