@@ -6,7 +6,7 @@ dotenv.config();
 describe("Notion API Tests", () => {
     beforeAll( async () => {
         await deleteAllMessages(false);
-    }, 10000);
+    });
 
     test("check the quantity messages sent and read", async () => {
     const quantity = 5;
@@ -32,5 +32,18 @@ describe("Notion API Tests", () => {
         expect(messages[0].message).toBe("Edited Message");
     });
 
+    test("deleteMessage should delete a specific message", async () => {
+        const message = 'Message to Delete';
+        await sendMessage("Test Sender", "Test Recipient", message, false);
 
+        let messages = await readAllMessages("Test Recipient", false);
+        expect(messages[0].message).toBe(message);
+
+        const messageId = messages[0].id;
+        await deleteAllMessages(messageId, false);
+
+        messages = await readAllMessages("Test Recipient", false);
+        expect(messages.length).toBe(0);
+    });
+    
 });
