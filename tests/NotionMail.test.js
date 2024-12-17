@@ -4,7 +4,7 @@ dotenv.config();
 
 
 describe("Notion API Tests", () => {
-    beforeAll( async () => {
+    beforeEach( async () => {
         await deleteAllMessages(false);
     });
 
@@ -46,4 +46,23 @@ describe("Notion API Tests", () => {
         expect(messages.length).toBe(0);
     });
     
+    test("snedMessage should not send an empty message", async () => {
+        const message = '';
+        await sendMessage("Test Sender", "Test Recipient", message, false);
+
+        const messages = await readAllMessages("Test Recipient", false);
+        expect(messages[0].message).toBe("Empty message");
+    });
+
+    test("sendMessage should not send messages with an empty sender or recipient", async () => {
+        const message = 'Test Message';
+        await expect(sendMessage("", "Test Recipient", message, false)).rejects.toThrow(
+            "Sender and recipient cannot be empty!");
+        
+        await expect(sendMessage("Test Sender", "", message, false)).rejects.toThrow(
+            "Sender and recipient cannot be empty!");
+    
+    const messages = await readAllMessages('Test Recipient', false);
+        expect(messages.length).toBe(0);
+    });
 });

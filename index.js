@@ -19,7 +19,13 @@ const rl = readline.createInterface({
 // Function to send a message
 export const sendMessage = async (sender, recipient, message, shouldLog = true) => {
   try {
+    if(sender === "" || recipient === "") {
+      throw new Error("Sender and recipient cannot be empty!");
+    }
     const timestamp = new Date().toISOString(); // Generate current timestamp
+    if(message === ""){
+        message = "Empty message";
+    }
     const response = await notion.pages.create({
       parent: { database_id: databaseId },
       properties: {
@@ -37,6 +43,7 @@ export const sendMessage = async (sender, recipient, message, shouldLog = true) 
   } catch (error) {
     console.error("\n❌ Failed to send message.");
     console.error(`💔 Error: ${error.message}\n`);
+    throw error;
   }
 };
 
@@ -196,6 +203,29 @@ const promptMenu = () => {
   `);
 };
 
+// Function to get the sender's name
+export const getSender = async () => {
+  let sender = "";
+
+  while (!sender.trim()) {
+    sender = await new Promise((resolve) => rl.question("   📛 Your name: $ ", resolve));
+    if (!sender.trim()) 
+      console.log("❌ Sender name cannot be empty!");
+  }
+  return sender;
+};
+
+// Function to get the recipient's name
+export const getRecipient = async () => {
+  let recipient = "";
+  while (!recipient.trim()) {
+    recipient = await new Promise((resolve) => rl.question("   📛 Recipient's name: $ ", resolve));
+    if (!recipient.trim()) 
+      console.log("❌ Recipient name cannot be empty!");
+  }
+  return recipient;
+};  
+
 // Main CLI logic
 const main = async () => {
   while (true) {
@@ -203,10 +233,10 @@ const main = async () => {
 
     const option = await new Promise((resolve) => rl.question("👉 Your choice: $ ", resolve));
 
-    if (option === "send") {
+    if (option === 'send') {
       console.log("\n📝 Let's send a new message!\n");
-      const sender = await new Promise((resolve) => rl.question("   📝 Sender: $ ", resolve));
-      const recipient = await new Promise((resolve) => rl.question("   💌 Recipient: $ ", resolve));
+      const sender = await getSender();
+      const recipient = await getRecipient();
       const message = await new Promise((resolve) => rl.question("   ✍️ Message: $ ", resolve));
       await sendMessage(sender, recipient, message);
     } else if (option === "read") {
