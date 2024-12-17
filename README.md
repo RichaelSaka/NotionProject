@@ -141,8 +141,6 @@ Here's an updated version of the **Technical Design Choices** section for your `
 
 ---
 
-Let me know if you'd like me to expand further or refine any details!
-
 ## 🧪 Testing
 Run tests using:
 ```bash
