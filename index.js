@@ -17,7 +17,7 @@ const rl = readline.createInterface({
 });
 
 // Function to send a message
-const sendMessage = async (sender, recipient, message) => {
+export const sendMessage = async (sender, recipient, message, shouldLog = true) => {
   try {
     const timestamp = new Date().toISOString(); // Generate current timestamp
     const response = await notion.pages.create({
@@ -29,9 +29,11 @@ const sendMessage = async (sender, recipient, message) => {
         Timestamp: { date: { start: timestamp } }, // Save timestamp
       },
     });
+    if(shouldLog){
+        console.log("\n🎉 ✅ Message sent successfully!");
+        console.log(`📬 Message ID: ${response.id}\n`);
+    }
 
-    console.log("\n🎉 ✅ Message sent successfully!");
-    console.log(`📬 Message ID: ${response.id}\n`);
   } catch (error) {
     console.error("\n❌ Failed to send message.");
     console.error(`💔 Error: ${error.message}\n`);
@@ -39,12 +41,13 @@ const sendMessage = async (sender, recipient, message) => {
 };
 
 // Function to read messages for a recipient
-const readAllMessages = async (recipient) => {
+export const readAllMessages = async (recipient, shouldLog = true) => {
   try {
     let nextCursor = undefined; // For paginated results
     let allMessages = [];
-
-    console.log("\n📬 Fetching messages...\n");
+    if(shouldLog){
+      console.log("\n📬 Fetching messages...\n");
+    }
 
     do {
       const queryOptions = {
@@ -68,18 +71,22 @@ const readAllMessages = async (recipient) => {
 
         allMessages.push({ id, sender, message, timestamp });
 
+        if(shouldLog){
         console.log(`
 📧 Message ID: ${id}
    From: ${sender}
    🕒 Sent At: ${timestamp}
    ✉️ Message: "${message}"
         `);
+        }
       });
 
       nextCursor = response.next_cursor;
     } while (nextCursor);
 
-    console.log(`✅ Total messages found: ${allMessages.length}\n`);
+    if (shouldLog){
+      console.log(`✅ Total messages found: ${allMessages.length}\n`);
+    }
     return allMessages;
   } catch (error) {
     console.error("\n❌ Failed to fetch messages.");
@@ -99,28 +106,72 @@ const deleteMessage = async (messageId) => {
   }
 };
 
+// Function to delete all the messages
+export const deleteAllMessages = async (shouldLog = true) => {
+  try {
+    if(shouldLog){
+      console.log("\n🗑️ Fetching all messages to delete...\n");
+    }
+
+    let nextCursor = undefined; 
+    let allPageIds = [];
+
+    do {
+      const response = await notion.databases.query({
+        database_id: databaseId,
+        start_cursor: nextCursor,
+      });
+
+      const pageIds = response.results.map((page) => page.id);
+      allPageIds = allPageIds.concat(pageIds);
+
+      nextCursor = response.next_cursor;
+    } while (nextCursor);
+
+    if(shouldLog){
+      console.log(`🔍 Found ${allPageIds.length} messages. Proceeding to delete...\n`);
+    }
+    for (const pageId of allPageIds) {
+      await notion.pages.update({
+        page_id: pageId,
+        archived: true, 
+      });
+      if(shouldLog){
+        console.log(`✅ Deleted message with ID: ${pageId}`); 
+      }
+    }
+
+    if(shouldLog){ 
+      console.log("\n🗑️ ✅ All messages have been deleted successfully!\n"); 
+    }
+  } catch (error) {
+    console.error("\n❌ Failed to delete all messages.");
+    console.error(`💔 Error: ${error.message}\n`);
+  }
+};
+
 // Function to edit a message
-const editMessage = async (messageId) => {
+export const editMessage = async (messageId, newMessage, shouldLog = true) => {
   try {
     // Retrieve the current message
     const page = await notion.pages.retrieve({ page_id: messageId });
     const currentMessage = page.properties?.Message?.title?.[0]?.text?.content || "No message";
-
-    console.log(`\n✏️ Current message: "${currentMessage}"`);
-
-    // Prompt user for new content
-    const newMessage = await new Promise((resolve) =>
-      rl.question("   ✍️ Enter new message content (leave blank to keep unchanged): $ ", resolve)
-    );
+    if(shouldLog){
+      console.log(`\n✏️ Current message: "${currentMessage}"`);
+    }
 
     if (newMessage.trim()) {
       await notion.pages.update({
         page_id: messageId,
         properties: { Message: { title: [{ text: { content: newMessage } }] } },
       });
-      console.log(`\n✏️ ✅ Message updated to: "${newMessage}"\n`);
+      if(shouldLog){
+        console.log(`\n✏️ ✅ Message updated to: "${newMessage}"\n`);
+      }
     } else {
-      console.log("\n✏️ No changes were made.\n");
+      if(shouldLog){
+        console.log("\n✏️ No changes were made.\n");
+      }
     }
   } catch (error) {
     console.error(`\n❌ Failed to edit message with ID ${messageId}.`);
@@ -173,7 +224,10 @@ const main = async () => {
       const messageId = await new Promise((resolve) =>
         rl.question("   🔑 Message ID to edit: $ ", resolve)
       );
-      await editMessage(messageId);
+      const newMessage = await new Promise((resolve) =>
+        rl.question("   ✍️ New message: $ ", resolve
+      ));
+      await editMessage(messageId, newMessage);
     } else if (option === "quit") {
       console.log("\n👋 Goodbye! Thanks for using NotionMail! 💖\n");
       rl.close();
