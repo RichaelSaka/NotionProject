@@ -22,7 +22,7 @@ NotionMail is a simple **Command-Line Interface (CLI)** application for managing
 
 ### Step 1: Clone the Repository
 ```bash
-git clone <repository-link>
+git clone <https://github.com/RichaelSaka/NotionProject.git>
 cd notion-project
 ```
 
@@ -153,7 +153,7 @@ npm test
 
 ## 👩‍💻 Author
 **Richael Saka**  
-A lightweight tool to simplify Notion message management from the terminal.
+Thank you for taking the time to review my project!!
 
 ---
 
