@@ -49,7 +49,11 @@ export const sendMessage = async (sender, recipient, message, shouldLog = true) 
 
 // Function to read messages for a recipient
 export const readAllMessages = async (recipient, shouldLog = true) => {
+
   try {
+    if(recipient === "") {
+      throw new Error("recipient cannot be empty!");
+    }
     let nextCursor = undefined; // For paginated results
     let allMessages = [];
     if(shouldLog){
@@ -161,7 +165,7 @@ export const deleteAllMessages = async (shouldLog = true) => {
 export const editMessage = async (messageId, newMessage, shouldLog = true) => {
   try {
     // Retrieve the current message
-    const page = await notion.pages.retrieve({ page_id: messageId });
+    const page = await notion.pages.retrieve({ page_id: messageId }); 
     const currentMessage = page.properties?.Message?.title?.[0]?.text?.content || "No message";
     if(shouldLog){
       console.log(`\n✏️ Current message: "${currentMessage}"`);
@@ -210,7 +214,7 @@ export const getSender = async () => {
   while (!sender.trim()) {
     sender = await new Promise((resolve) => rl.question("   📛 Your name: $ ", resolve));
     if (!sender.trim()) 
-      console.log("❌ Sender name cannot be empty!");
+      console.log("❌ Please provide the name of the sender!");
   }
   return sender;
 };
@@ -221,7 +225,7 @@ export const getRecipient = async () => {
   while (!recipient.trim()) {
     recipient = await new Promise((resolve) => rl.question("   📛 Recipient's name: $ ", resolve));
     if (!recipient.trim()) 
-      console.log("❌ Recipient name cannot be empty!");
+      console.log("❌ Please provide a name of the recipient!");
   }
   return recipient;
 };  
@@ -231,9 +235,11 @@ const main = async () => {
   while (true) {
     promptMenu();
 
-    const option = await new Promise((resolve) => rl.question("👉 Your choice: $ ", resolve));
-
-    if (option === 'send') {
+    const option = await new Promise((resolve) => 
+      rl.question("👉 Your choice: $ ", (input) => resolve(input.toLowerCase()))
+  );
+  
+    if (option == 'send') {
       console.log("\n📝 Let's send a new message!\n");
       const sender = await getSender();
       const recipient = await getRecipient();
@@ -241,8 +247,8 @@ const main = async () => {
       await sendMessage(sender, recipient, message);
     } else if (option === "read") {
       console.log("\n📬 Let's view your inbox!\n");
-      const user = await new Promise((resolve) => rl.question("   📛 Your name: $ ", resolve));
-      await readAllMessages(user);
+      const recipient = await getRecipient();
+      await readAllMessages(recipient);
     } else if (option === "delete") {
       console.log("\n🗑️ Let's delete a message!\n");
       const messageId = await new Promise((resolve) =>
@@ -268,5 +274,7 @@ const main = async () => {
   }
 };
 
-// Run the CLI
-main();
+// Run the CLI only when out of test environment
+if (process.argv[1] && process.argv[1].includes("index.js")) {
+  main();
+}
